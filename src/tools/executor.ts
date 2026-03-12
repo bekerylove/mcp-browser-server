@@ -140,6 +140,28 @@ export class ToolExecutor {
         case 'browser_play_audio':
           return await this.playAudio(args);
 
+        // Stealth tools
+        case 'browser_stealth_navigate':
+          return await this.stealthNavigate(args);
+        case 'browser_stealth_click':
+          return await this.stealthClick(args);
+        case 'browser_stealth_type':
+          return await this.stealthType(args);
+        case 'browser_stealth_scroll':
+          return await this.stealthScroll(args);
+        case 'browser_stealth_fill_form':
+          return await this.stealthFillForm(args);
+        case 'browser_stealth_read_page':
+          return await this.stealthReadPage(args);
+        case 'browser_stealth_inject':
+          return await this.stealthInject(args);
+        case 'browser_stealth_wait':
+          return await this.stealthWait(args);
+        case 'browser_stealth_extract_links':
+          return await this.stealthExtractLinks(args);
+        case 'browser_stealth_config':
+          return await this.stealthConfigure(args);
+
         default:
           return {
             success: false,
@@ -1216,5 +1238,112 @@ export class ToolExecutor {
       success: true,
       url
     };
+  }
+
+  // Stealth methods
+  private async stealthNavigate(args: ToolArgs): Promise<ToolResult> {
+    const { contextId, url, preset = 'news', waitForLoad = true, readPage = false, config } = args;
+    const context = await this.browserManager.createContext(contextId);
+    const page = await this.browserManager.getPage((context as any).id || contextId);
+
+    // Import stealth implementation
+    const { stealthNavigate } = await import('./stealth-impl.js');
+
+    const result = await stealthNavigate(page, url, { preset, config, waitForLoad, readPage });
+
+    return {
+      ...result,
+      pageId: this.browserManager.getPageId(page),
+      contextId: (context as any).id || contextId || 'default'
+    };
+  }
+
+  private async stealthClick(args: ToolArgs): Promise<ToolResult> {
+    const { pageId, selector, hoverFirst = true, hoverDelay = 500, clickDelay = 200, randomDelay = true } = args;
+    const page = this.browserManager.getPageById(pageId);
+
+    const { stealthClick } = await import('./stealth-impl.js');
+
+    return await stealthClick(page, selector, { hoverFirst, hoverDelay, clickDelay, randomDelay });
+  }
+
+  private async stealthType(args: ToolArgs): Promise<ToolResult> {
+    const { pageId, selector, text, charDelay = 100, enableMistakes = false, mistakeRate = 0.05, randomDelay = true } = args;
+    const page = this.browserManager.getPageById(pageId);
+
+    const { stealthType } = await import('./stealth-impl.js');
+
+    return await stealthType(page, selector, text, { charDelay, enableMistakes, mistakeRate, randomDelay });
+  }
+
+  private async stealthScroll(args: ToolArgs): Promise<ToolResult> {
+    const { pageId, targetY, selector, steps = 5, smooth = true, stepDelay = 300, randomDelay = true } = args;
+    const page = this.browserManager.getPageById(pageId);
+
+    const { stealthScroll } = await import('./stealth-impl.js');
+
+    return await stealthScroll(page, { targetY, selector, steps, smooth, stepDelay, randomDelay });
+  }
+
+  private async stealthFillForm(args: ToolArgs): Promise<ToolResult> {
+    const { pageId, fields, fillDelay = 1000, shuffleFields = false } = args;
+    const page = this.browserManager.getPageById(pageId);
+
+    const { stealthFillForm } = await import('./stealth-impl.js');
+
+    return await stealthFillForm(page, fields, { fillDelay, shuffleFields });
+  }
+
+  private async stealthReadPage(args: ToolArgs): Promise<ToolResult> {
+    const { pageId, readingSpeed = 200, scrollThreshold = 0.3, maxScrolls = 50 } = args;
+    const page = this.browserManager.getPageById(pageId);
+
+    const { stealthReadPage } = await import('./stealth-impl.js');
+
+    return await stealthReadPage(page, { readingSpeed, scrollThreshold, maxScrolls });
+  }
+
+  private async stealthInject(args: ToolArgs): Promise<ToolResult> {
+    const { pageId, config } = args;
+    const page = this.browserManager.getPageById(pageId);
+
+    const { stealthInject } = await import('./stealth-impl.js');
+
+    return await stealthInject(page, config);
+  }
+
+  private async stealthWait(args: ToolArgs): Promise<ToolResult> {
+    const { minDelay = 500, maxDelay = 3000 } = args;
+
+    const { stealthWait } = await import('./stealth-impl.js');
+
+    return await stealthWait(minDelay, maxDelay);
+  }
+
+  private async stealthExtractLinks(args: ToolArgs): Promise<ToolResult> {
+    const { pageId, maxLinks = 30, linkSelector = 'a[href]', visitDelay = 2000, extractData = true, dataSelector = 'article', returnToSource = true } = args;
+    const page = this.browserManager.getPageById(pageId);
+
+    const { stealthExtractLinks } = await import('./stealth-impl.js');
+
+    // Get contextId from page
+    const contextId = this.browserManager.getPageId(page) || 'default';
+
+    return await stealthExtractLinks(page, this.browserManager, contextId, {
+      maxLinks,
+      linkSelector,
+      visitDelay,
+      extractData,
+      dataSelector,
+      returnToSource
+    });
+  }
+
+  private async stealthConfigure(args: ToolArgs): Promise<ToolResult> {
+    const { config, preset } = args;
+
+    const { stealthConfigure } = await import('./stealth-impl.js');
+
+    return stealthConfigure(config || {}, preset);
   }
 }

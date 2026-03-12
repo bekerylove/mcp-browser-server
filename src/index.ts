@@ -13,6 +13,7 @@ import { interactionTools } from './tools/interaction.js';
 import { contentTools } from './tools/content.js';
 import { visualTools } from './tools/visual.js';
 import { advancedTools } from './tools/advanced.js';
+import { stealthTools } from './tools/stealth.js';
 
 class BrowserMCPServer {
   private server: Server;
@@ -130,7 +131,8 @@ class BrowserMCPServer {
       ...interactionTools,
       ...contentTools,
       ...visualTools,
-      ...advancedTools
+      ...advancedTools,
+      ...stealthTools
     ];
   }
 
